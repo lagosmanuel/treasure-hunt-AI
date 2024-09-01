@@ -33,11 +33,50 @@
 
 update_beliefs(Perc):-
 
-	% El agente olvida todo lo que recordaba
-	retractall(time(_)),
-	retractall(direction(_)),
-	retractall(at(_, _, _)),
-	retractall(node(_, _, _, _, _)),
+    % El agente olvida
+    retractall(time(_)),
+    retractall(direction(_)),
+    retractall(at(_, agente, me)),
 
-	% y recuerda lo que percibió
-	forall(member(Rel, Perc), assert(Rel)).
+    % El agente actualiza los relojes
+    forall(at(IdNodo, reloj(X), IdReloj),
+        update_clock(at(IdNodo, reloj(X), IdReloj))
+    ),
+
+    % El agente confirma sus hechos
+    forall(member(node(IdNodo, _, _, _, _), Perc),
+        check_fact(IdNodo, Perc)
+    ),
+
+    % El agentente recuerda los nuevos hechos
+    forall((member(Rel, Perc), \+call(Rel)),
+        assert(Rel)
+    ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% update_clock(+clock)
+%
+% El predicado update_clock/1 actualiza el tiempo de un
+% reloj recordado por el agente.
+
+update_clock(at(IdNodo, reloj(X), IdReloj)):-
+    retract(at(IdNodo, reloj(X), IdReloj)),
+    NX is X-1,
+    NX > 0,
+    assert(at(IdNodo, reloj(NX), IdReloj)).
+
+update_clock(_).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check_fact(+IdNodo, +Perc)
+%
+% El predicado check_fact/2 comprueba si un hecho at/3
+% recordado por el agente sigue siendo verdadero según
+% la percepción actual.
+
+check_fact(IdNodo, Perc):-
+    at(IdNodo, TipoEntidad, IdEntidad),
+    member(at(IdNodo, TipoEntidad, IdEntidad), Perc).
+
+check_fact(IdNodo, _):-
+    retractall(at(IdNodo, _, _)).
