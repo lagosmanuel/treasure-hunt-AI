@@ -84,14 +84,6 @@ decide_action(Action, 'Quiero levantar una copa...'):-
     retractall(at(MyNode, _, IdGold)),
 	retractall(plandesplazamiento(_)).
 
-% Me muevo a una posición vecina seleccionada de manera aleatoria.
-decide_action(Action, 'Me muevo a la posicion de al lado...'):-
-	at(MyNode, agente, me),
-	node(MyNode, _, _, _, AdyList),
-	length(AdyList, LenAdyList), LenAdyList > 0,
-	random_member([IdAdyNode, _CostAdyNode], AdyList),
-	!,
-	Action = avanzar(IdAdyNode).
 
 % Si tengo un plan de movimientos, ejecuto la siguiente acción.
 decide_action(Action, 'Avanzar...'):-
@@ -110,6 +102,16 @@ decide_action(Action, 'Avanzar con nuevo plan...'):-
 	Plan \= [],
 	obtenerMovimiento(Plan, Action, Resto),
 	assert(plandesplazamiento(Resto)).
+
+% Me muevo a una posición vecina seleccionada de manera aleatoria.
+decide_action(Action, 'Me muevo a la posicion de al lado...'):-
+	at(MyNode, agente, me),
+	node(MyNode, _, _, _, AdyList),
+	length(AdyList, LenAdyList), LenAdyList > 0,
+	random_member([IdAdyNode, _CostAdyNode], AdyList),
+	!,
+	Action = avanzar(IdAdyNode).
+	
 
 % Giro en sentido horario, para conocer mas terreno.
 decide_action(Action, 'Girar para conocer el territorio...'):-

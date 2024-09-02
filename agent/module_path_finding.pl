@@ -7,6 +7,7 @@
 	  ]).
 
 :- use_module(module_beliefs_update, [node/5, at/3]).
+:- use_module(cola, [cola_insertar/3, cola_eliminar/3, cola_obtener/3]).
 
 :- dynamic padre/2, raiz/1, esMeta/1.
 
@@ -84,6 +85,7 @@ buscar_plan_desplazamiento(_, [], [], 0).
 %
 	
 buscarEstrella(Frontera, Metas, Camino, Costo, Destino):-
+	retractall(padre(_, _)),
 	buscar(Frontera, [], Metas, Destino),
 	encontrarCamino(Destino, C),
 	append([Destino], C, C2),	
@@ -117,7 +119,7 @@ buscar(Frontera, Visitados, Metas, MM):-
 	seleccionar(Nodo, Frontera, FronteraSinNodo), % selecciona primer nodo de la frontera
 	generarVecinos(Nodo, Vecinos), % genera los vecinos del nodo
 	agregarAVisitados(Nodo, Visitados, NuevosVisitados), % agrega el nodo a lista de visitados
-	agregar(FronteraSinNodo, Vecinos, NuevaFrontera, NuevosVisitados, Nodo, Metas), % agrega vecinos a la frontera - TO-DO
+	agregar(FronteraSinNodo, Vecinos, NuevaFrontera, NuevosVisitados, Nodo, Metas), % agrega vecinos a la frontera
 	buscar(NuevaFrontera, NuevosVisitados, Metas, MM). % continua la busqueda con la nueva frontera
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
@@ -129,6 +131,50 @@ buscar(Frontera, Visitados, Metas, MM):-
 generarVecinos([IdNodo, _], Vecinos):-
     node(IdNodo, _, _, _, Conexiones),
     findall(Vecino, member(Vecino, Conexiones), Vecinos).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% agregar(+Frontera, +Vecinos, -NuevaFrontera, +Visitados, +Nodo, +Metas)
+%
+% Agrega los vecinos a la frontera.
+%
+agregar(Frontera, [], Frontera, _, _, _).
+agregar(Frontera, [Vecino|Vecinos], NuevaFrontera, Visitados, Nodo, Metas):-
+    [IdNodo, CostoNodo] = Nodo,
+    [IdVecino, CostoVecino] = Vecino,
+    \+member([IdVecino, _], Visitados), !,
+    calcularHMetas(IdNodo, H, Metas),
+    CostoTotal is CostoNodo + CostoVecino + H,
+    agregarVecino([IdVecino, CostoTotal], Frontera, Nodo, FronteraConVecino),
+    agregar(FronteraConVecino, Vecinos, NuevaFrontera, Visitados, Nodo, Metas).
+
+agregar(Frontera, [_|Vecinos], NuevaFrontera, Visitado, Nodo, Metas):-
+    agregar(Frontera, Vecinos, NuevaFrontera, Visitado, Nodo, Metas).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% agregarVecino(+Vecino, +Frontera, +Nodo, -NuevaFrontera)
+%
+% Agrega un vecino a la Frontera.
+%
+
+agregarVecino([IdVecino, CostoVecino], Frontera, [IdNodo, _], NuevaFrontera):-
+    \+member([IdVecino, _], Frontera), !,
+    retractall(padre(IdVecino, _)),
+    assert(padre(IdVecino, IdNodo)),
+    cola_insertar(Frontera, [IdVecino, CostoVecino], NuevaFrontera).
+
+agregarVecino([IdVecino, CostoVecino], Frontera, _, Frontera):-
+    member([IdVecino, CostoAnterior], Frontera),
+    CostoAnterior =< CostoVecino, !.
+
+agregarVecino(Vecino, Frontera, Nodo, NuevaFrontera):-
+    [IdNodo, _] = Nodo,
+    [IdVecino, _] = Vecino,
+    retractall(padre(IdVecino, _)),
+    assert(padre(IdVecino, IdNodo)),
+    cola_eliminar(Frontera, IdVecino, ColaAux),
+    cola_insertar(ColaAux, Vecino, NuevaFrontera).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
 %
@@ -152,6 +198,18 @@ costoCamino([X|Xs], R):-
 	node(X, _, _, CostoNodo, _),
 	costoCamino(Xs, CostoResto),
 	R is CostoNodo + CostoResto.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% calcularHMetas(+Nodo, ?Resultado, +Metas)
+%
+% Calcula el mínimo valor de la heurística para el nodo Nodo a una
+% Meta de la lista de Metas.
+% La heurística es la distancia euclidea.
+%
+calcularHMetas(Nodo, Resultado, Metas):-
+    findall(H, (member(Meta, Metas), calcularH(Nodo, Meta, H)), Hs),
+    min_list(Hs, Resultado).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
