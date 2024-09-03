@@ -7,7 +7,7 @@
 	  ]).
 
 :- use_module(module_beliefs_update, [node/5, at/3]).
-:- use_module(cola, [cola_insertar/3, cola_eliminar/3, cola_obtener/3]).
+:- use_module(cola, [cola_insertar/3, cola_eliminar/3]).
 
 :- dynamic padre/2, raiz/1, esMeta/1.
 
