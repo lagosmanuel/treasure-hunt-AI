@@ -1,10 +1,9 @@
-:- module(path_finding,
-	  [
-	    buscar_plan_desplazamiento/4,
-		raiz/1,
-		padre/2,
-		esMeta/1
-	  ]).
+:- module(path_finding, [
+    buscar_plan_desplazamiento/4,
+    raiz/1,
+    padre/2,
+    esMeta/1
+]).
 
 :- use_module(module_beliefs_update, [node/5, at/3]).
 :- use_module(cola, [cola_insertar/3, cola_eliminar/3]).

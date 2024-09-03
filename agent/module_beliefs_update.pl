@@ -1,11 +1,10 @@
-:- module(beliefs_update,
-	  [
-	    update_beliefs/1,
-	    time/1,
-	    node/5,
-	    at/3,
-		direction/1
-	  ]).
+:- module(beliefs_update, [
+    update_beliefs/1,
+    time/1,
+    node/5,
+    at/3,
+    direction/1
+]).
 
 :- dynamic time/1, node/5, at/3, direction/1.
 
