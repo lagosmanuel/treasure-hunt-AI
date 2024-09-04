@@ -152,13 +152,13 @@ busqueda_plan(Plan, Destino, Costo):-
  	retractall(plandesplazamiento(_)),
  	retractall(esMeta(_)),
 
-    findall(Nodo, at(Nodo, copa, _), Copas), % nuevas metas
-    findall(Nodo, at(Nodo, cofre, _), Cofres), % nuevas metas
-    findall(Nodo, at(Nodo, anillo, _), Anillos), % nuevas metas
-    findall(Nodo, at(Nodo, pocion, _), Pociones), % nuevas metas
-    findall(Nodo, at(Nodo, reloj(_), _), Relojes), % nuevas metas
+    findall(Nodo, at(Nodo, copa, _), Copas),
+    findall(Nodo, at(Nodo, cofre, _), Cofres),
+    findall(Nodo, at(Nodo, diamante, _), Diamantes),
+    findall(Nodo, at(Nodo, pocion, _), Pociones),
+    findall(Nodo, at(Nodo, reloj(_), _), Relojes),
 
-    append3(Copas, Cofres, Anillos, Tesoros),
+    append3(Copas, Cofres, Diamantes, Tesoros),
     append3(Tesoros, Pociones, Relojes, Metas),
 
     buscar_plan_desplazamiento(Metas, Plan, Destino, Costo). % implementado en module_path_finding
@@ -176,8 +176,8 @@ check_tesoro(Nodo, IdTesoro, 'Quiero levantar una copa...'):-
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar un cofre...'):-
     at(Nodo, cofre, IdTesoro).
 
-check_tesoro(Nodo, IdTesoro, 'Quiero levantar un anillo...'):-
-    at(Nodo, anillo, IdTesoro).
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar un diamante...'):-
+    at(Nodo, diamante, IdTesoro).
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar una poción...'):-
     at(Nodo, pocion, IdTesoro).
