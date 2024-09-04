@@ -86,6 +86,7 @@ decide_action(Action, 'Quiero levantar una copa...'):-
 % Si tengo un plan de movimientos, ejecuto la siguiente acción.
 decide_action(Action, 'Avanzar...'):-
 	plandesplazamiento(Plan),
+    evaluarPlan(Plan),
 	length(Plan, LargoPlan),
     LargoPlan > 0, !,
 	obtenerMovimiento(Plan, Destino, Resto),
@@ -121,6 +122,16 @@ decide_action(Action, 'Girar para conocer el territorio...'):-
 				)			
 			)	
 	).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% evaluarPlan(+Plan)
+%
+% Evalua si un plan sigue siendo deseable.
+
+evaluarPlan(Plan):-
+    reverse(Plan, [avanzar(Meta)|_]),
+    at(Meta, _, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
