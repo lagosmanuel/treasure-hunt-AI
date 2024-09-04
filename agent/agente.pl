@@ -102,12 +102,14 @@ decide_action(Action, 'Avanzar con nuevo plan...'):-
 	assert(plandesplazamiento(Resto)).
 
 % Me muevo a una posición vecina seleccionada de manera aleatoria.
-decide_action(Action, 'Me muevo a la posicion de al lado...'):-
-	at(MyNode, agente, me),
-	node(MyNode, _, _, _, AdyList),
-	length(AdyList, LenAdyList), LenAdyList > 0,
+decide_action(Action, 'Me muevo random para explorar el territorio...'):-
+    random(Chance),
+    Chance > 0.4,
+    at(MyNode, agente, me),
+    node(MyNode, _, _, _, AdyList),
+    length(AdyList, LenAdyList), LenAdyList > 0,
     random_member([IdAdyNode, _CostAdyNode], AdyList), !,
-	Action = avanzar(IdAdyNode).
+    Action = avanzar(IdAdyNode).
 
 % Giro en sentido horario, para conocer mas terreno.
 decide_action(Action, 'Girar para conocer el territorio...'):-
