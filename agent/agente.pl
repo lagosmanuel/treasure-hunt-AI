@@ -122,7 +122,8 @@ decide_action(Action, 'Girar para conocer el territorio...'):-
 
 evaluar_plan(Plan):-
     reverse(Plan, [avanzar(Meta)|_]),
-    at(Meta, _, _).
+    at(Meta, Tipo, _),
+    write('estoy persiguiendo un/a '), write(Tipo), write(' en '), write(Meta), nl.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %

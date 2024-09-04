@@ -1,5 +1,5 @@
 {
-    "tiempo": 10,
+    "tiempo": 1000,
     "player_init_pos": [10, 10],
     "rango": 8,
     "cantidad_premios": 20,
