@@ -15,7 +15,7 @@
 % eliminarPrimero(+Lista, +Elemento)
 %
 % Elimina el primer elemento de la lista.
-%
+
 eliminarPrimero([], []).
 eliminarPrimero([_|Xs], Xs).
 
@@ -24,18 +24,18 @@ eliminarPrimero([_|Xs], Xs).
 % seleccionar(+Nodo, +Frontera, +FronteraSinNodo)
 %	
 % Selecciona el primer nodo de la lista Frontera.
-%	
+
 seleccionar(Nodo, [Nodo|RestoLista], RestoLista).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % encontrarCamino(+Meta, -Camino)
 %
-% Encuentra un camino a un nodo Meta.
+% Encuentra un camino a un nodo meta.
 % Usa las relaciones padre(Hijo, Padre) que se van agregando a la base de conocimiento
 % cuando se agregan nuevos vecinos a la nueva frontera, 
 % en la busqueda de llegar de un nodo origen a uno destino.
-%
+
 encontrarCamino(Nodo, []):- raiz(Nodo), !.
 encontrarCamino(Nodo, [P|Camino]):-
 	padre(Nodo, P),
@@ -49,7 +49,7 @@ encontrarCamino(Nodo, [P|Camino]):-
 % Para cada nodo de un camino, crea una lista de acciones de movimiento avanzar(IdNodo)
 % donde IdNodo es un identificador de un nodo.
 % Camino es una lista conteniendo identificadores de nodos.
-%
+
 crearPlan([], []).
 crearPlan(Camino, Plan):-
 	findall(avanzar(Nodo), member(Nodo, Camino), Plan).
@@ -61,14 +61,12 @@ crearPlan(Camino, Plan):-
 % Si tiene al menos una meta, pone el nodo actual del agente como raiz del árbol de búsqueda
 % y busca el camino desde la posición del agente a un meta
 % usando A* (buscarEstrella/5)
-%
 
 buscar_plan_desplazamiento(Metas, Plan, Destino, Costo):-
 	forall(member(Meta, Metas), assert(esMeta(Meta))),
 	at(MyNode, agente, me),
 	length(Metas, CantMetas),
-	CantMetas > 0,
-	!,
+    CantMetas > 0, !,
 	retractall(raiz(_)),
 	assert(raiz(MyNode)),
 	buscarEstrella([[MyNode, 0]], Metas, Camino, Costo, Destino),
@@ -81,8 +79,7 @@ buscar_plan_desplazamiento(_, [], [], 0).
 % buscarEstrella(+Frontera, +Metas, ?Camino, ?Costo, ?Destino)
 % 
 % Busca el camino optimo desde la frontera hacia la meta mas cercana, utilizando la estrategia de busqueda A*.
-%
-	
+
 buscarEstrella(Frontera, Metas, Camino, Costo, Destino):-
 	retractall(padre(_, _)),
 	buscar(Frontera, [], Metas, Destino),
@@ -97,7 +94,7 @@ buscarEstrella(Frontera, Metas, Camino, Costo, Destino):-
 %
 % buscar(+Frontera, +Visitados, +Metas, -Destino)
 % 
-% Busca el camino optimo desde la frontera hacia la Meta, utilizando la estrategia de busqueda A*.
+% Busca el camino optimo desde la frontera hacia la meta, utilizando la estrategia de busqueda A*.
 % No devuelve el camino como un parametro, sino que agrega las relaciones padre(Hijo, Padre)
 % que permita luego encontrar el camino y su costo.
 %
@@ -111,8 +108,7 @@ buscarEstrella(Frontera, Metas, Camino, Costo, Destino):-
 	
 buscar(Frontera, _, _M, Nodo):-
 	seleccionar([Nodo, _], Frontera, _),
-	esMeta(Nodo),
-	!.
+    esMeta(Nodo), !.
 
 buscar(Frontera, Visitados, Metas, MM):-
 	seleccionar(Nodo, Frontera, FronteraSinNodo), % selecciona primer nodo de la frontera
@@ -126,7 +122,7 @@ buscar(Frontera, Visitados, Metas, MM):-
 % generarVecinos(+Nodo, -Vecinos)
 %
 % Genera los vecinos del nodo.
-%
+
 generarVecinos([IdNodo, _], Vecinos):-
     node(IdNodo, _, _, _, Conexiones),
     findall(Vecino, member(Vecino, Conexiones), Vecinos).
@@ -136,13 +132,13 @@ generarVecinos([IdNodo, _], Vecinos):-
 % agregar(+Frontera, +Vecinos, -NuevaFrontera, +Visitados, +Nodo, +Metas)
 %
 % Agrega los vecinos a la frontera.
-%
+
 agregar(Frontera, [], Frontera, _, _, _).
 agregar(Frontera, [Vecino|Vecinos], NuevaFrontera, Visitados, Nodo, Metas):-
-    [IdNodo, CostoNodo] = Nodo,
+    [_, CostoNodo] = Nodo,
     [IdVecino, CostoVecino] = Vecino,
     \+member([IdVecino, _], Visitados), !,
-    calcularHMetas(IdNodo, H, Metas),
+    calcularMejorH(IdVecino, H, Metas),
     CostoTotal is CostoNodo + CostoVecino + H,
     agregarVecino([IdVecino, CostoTotal], Frontera, Nodo, FronteraConVecino),
     agregar(FronteraConVecino, Vecinos, NuevaFrontera, Visitados, Nodo, Metas).
@@ -155,7 +151,6 @@ agregar(Frontera, [_|Vecinos], NuevaFrontera, Visitado, Nodo, Metas):-
 % agregarVecino(+Vecino, +Frontera, +Nodo, -NuevaFrontera)
 %
 % Agrega un vecino a la Frontera.
-%
 
 agregarVecino([IdVecino, CostoVecino], Frontera, [IdNodo, _], NuevaFrontera):-
     \+member([IdVecino, _], Frontera), !,
@@ -167,20 +162,18 @@ agregarVecino([IdVecino, CostoVecino], Frontera, _, Frontera):-
     member([IdVecino, CostoAnterior], Frontera),
     CostoAnterior =< CostoVecino, !.
 
-agregarVecino(Vecino, Frontera, Nodo, NuevaFrontera):-
-    [IdNodo, _] = Nodo,
-    [IdVecino, _] = Vecino,
+agregarVecino([IdVecino, CostoVecino], Frontera, [IdNodo, _], NuevaFrontera):-
     retractall(padre(IdVecino, _)),
     assert(padre(IdVecino, IdNodo)),
-    cola_eliminar(Frontera, IdVecino, ColaAux),
-    cola_insertar(ColaAux, Vecino, NuevaFrontera).
+    cola_eliminar(Frontera, IdVecino, FronteraAux),
+    cola_insertar(FronteraAux, [IdVecino, CostoVecino], NuevaFrontera).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
 %
 % agregarAVisitados(+Nodo, +Visitados, ?VisitadosConNodo)
 %
 % Agrega un nodo a la lista de visitados.
-%
+
 agregarAVisitados(Nodo, Visitados, [Nodo | Visitados]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -190,7 +183,7 @@ agregarAVisitados(Nodo, Visitados, [Nodo | Visitados]).
 % Calcula el costo del camino, 
 % como la sumatoria de los costos de los nodos que forma el camino.
 % Lista es una lista conteniendo identificadores de nodos, representando el camino.
-%
+
 costoCamino([], 0).
 
 costoCamino([X|Xs], R):-
@@ -200,13 +193,12 @@ costoCamino([X|Xs], R):-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% calcularHMetas(+Nodo, ?Resultado, +Metas)
+% calcularMejorH(+Nodo, ?Resultado, +Metas)
 %
-% Calcula el mínimo valor de la heurística para el nodo Nodo a una
-% Meta de la lista de Metas.
-% La heurística es la distancia euclidea.
-%
-calcularHMetas(Nodo, Resultado, Metas):-
+% Calcula el mínimo valor de la heurística para el nodo a una meta
+% de una lista de metas.
+
+calcularMejorH(Nodo, Resultado, Metas):-
     findall(H, (member(Meta, Metas), calcularH(Nodo, Meta, H)), Hs),
     min_list(Hs, Resultado).
 
@@ -214,9 +206,9 @@ calcularHMetas(Nodo, Resultado, Metas):-
 %
 % calcularH(+Nodo, ?Resultado, +Meta)
 %
-% Calcula el valor de la heurística para el nodo Nodo a una Meta.
+% Calcula el valor de la heurística para el nodo a una meta.
 % La heurística es la distancia euclidea.
-%
+
 calcularH(Nodo, Meta, Resultado):-
 	node(Meta, X2, Y2, _, _),
 	node(Nodo, X1, Y1, _, _),

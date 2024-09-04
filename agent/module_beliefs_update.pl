@@ -46,7 +46,7 @@ update_beliefs(Perc):-
         check_fact(IdNodo, Perc)
     ),
 
-    % El agentente recuerda los nuevos hechos
+    % El agente recuerda los nuevos hechos
     forall((member(Rel, Perc), \+call(Rel)),
         assert(Rel)
     ).
@@ -70,7 +70,8 @@ update_clock(_).
 %
 % El predicado check_fact/2 comprueba si un hecho at/3
 % recordado por el agente sigue siendo verdadero según
-% la percepción actual.
+% la percepción actual. Asume que en un mismo nodo
+% hay a lo sumo una entidad.
 
 check_fact(IdNodo, Perc):-
     at(IdNodo, TipoEntidad, IdEntidad),

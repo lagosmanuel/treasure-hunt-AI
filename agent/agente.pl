@@ -1,4 +1,3 @@
-
 :- use_module(module_beliefs_update, [
  	update_beliefs/1,
  	time/1,
@@ -84,13 +83,11 @@ decide_action(Action, 'Quiero levantar una copa...'):-
     retractall(at(MyNode, _, IdGold)),
 	retractall(plandesplazamiento(_)).
 
-
 % Si tengo un plan de movimientos, ejecuto la siguiente acción.
 decide_action(Action, 'Avanzar...'):-
 	plandesplazamiento(Plan),
 	length(Plan, LargoPlan),
-	LargoPlan > 0,
-	!,
+    LargoPlan > 0, !,
 	obtenerMovimiento(Plan, Destino, Resto),
 	retractall(plandesplazamiento(_)),
 	assert(plandesplazamiento(Resto)),
@@ -108,10 +105,8 @@ decide_action(Action, 'Me muevo a la posicion de al lado...'):-
 	at(MyNode, agente, me),
 	node(MyNode, _, _, _, AdyList),
 	length(AdyList, LenAdyList), LenAdyList > 0,
-	random_member([IdAdyNode, _CostAdyNode], AdyList),
-	!,
+    random_member([IdAdyNode, _CostAdyNode], AdyList), !,
 	Action = avanzar(IdAdyNode).
-	
 
 % Giro en sentido horario, para conocer mas terreno.
 decide_action(Action, 'Girar para conocer el territorio...'):-
@@ -132,7 +127,7 @@ decide_action(Action, 'Girar para conocer el territorio...'):-
 % obtenerMovimiento(?Lista, ?Movimiento, ?Resto)
 %
 % Obtiene el primer movimiento de una lista de movimientos.
-% 
+
 obtenerMovimiento([], [], []).
 obtenerMovimiento([X|Xs], X, Xs).
 
@@ -141,10 +136,10 @@ obtenerMovimiento([X|Xs], X, Xs).
 % busqueda_plan(-Plan, -Destino, -Costo)
 %
 % Busca un plan de desplazamiento hacia el tesoro que se encuentre mas cerca.
-%	
+
 busqueda_plan(Plan, Destino, Costo):-
  	retractall(plandesplazamiento(_)),
  	retractall(esMeta(_)),
  	findall(Nodo, at(Nodo, copa, _), Metas), % nuevas metas
 
- 	buscar_plan_desplazamiento(Metas, Plan, Destino, Costo). % implementado en module_path_finding
+    buscar_plan_desplazamiento(Metas, Plan, Destino, Costo). % implementado en module_path_finding
