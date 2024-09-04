@@ -74,13 +74,13 @@ run(Perc, Action, Text, Beliefs):-
 % Pueden realizar todos los cambios de implementación que consideren necesarios.
 % Esta implementación busca ser un marco para facilitar la resolución del proyecto.
 
-% Si estoy en la misma posición que una copa, intento levantarla.
-decide_action(Action, 'Quiero levantar una copa...'):-
+% Si estoy en la misma posición que un tesoro, intento levantarlo.
+decide_action(Action, Mensaje):-
     at(MyNode, agente, me),
-    at(MyNode, copa, IdGold),
+    check_tesoro(MyNode, IdTesoro, Mensaje),
     node(MyNode, PosX, PosY, _, _),
-    Action = levantar_tesoro(IdGold, PosX, PosY),
-    retractall(at(MyNode, _, IdGold)),
+    Action = levantar_tesoro(IdTesoro, PosX, PosY),
+    retractall(at(MyNode, _, IdTesoro)),
 	retractall(plandesplazamiento(_)).
 
 % Si tengo un plan de movimientos, ejecuto la siguiente acción.
@@ -151,6 +151,36 @@ obtenerMovimiento([X|Xs], X, Xs).
 busqueda_plan(Plan, Destino, Costo):-
  	retractall(plandesplazamiento(_)),
  	retractall(esMeta(_)),
- 	findall(Nodo, at(Nodo, copa, _), Metas), % nuevas metas
+
+    findall(Nodo, at(Nodo, copa, _), Copas), % nuevas metas
+    findall(Nodo, at(Nodo, cofre, _), Cofres), % nuevas metas
+    findall(Nodo, at(Nodo, anillo, _), Anillos), % nuevas metas
+    findall(Nodo, at(Nodo, pocion, _), Pociones), % nuevas metas
+    findall(Nodo, at(Nodo, reloj(_), _), Relojes), % nuevas metas
+
+    append3(Copas, Cofres, Anillos, Tesoros),
+    append3(Tesoros, Pociones, Relojes, Metas),
 
     buscar_plan_desplazamiento(Metas, Plan, Destino, Costo). % implementado en module_path_finding
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% check_tesoro(+Nodo, -IdTesoro, -Mensaje)
+%
+% Comprueba si en el nodo hay un tesoro. En caso de haberlo,
+% devuelve el identificador y un mensaje 'Quiero levantar...'.
+
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar una copa...'):-
+    at(Nodo, copa, IdTesoro).
+
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar un cofre...'):-
+    at(Nodo, cofre, IdTesoro).
+
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar un anillo...'):-
+    at(Nodo, anillo, IdTesoro).
+
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar una poción...'):-
+    at(Nodo, pocion, IdTesoro).
+
+check_tesoro(Nodo, IdTesoro, 'Quiero levantar un reloj...'):-
+    at(Nodo, reloj(_), IdTesoro).
