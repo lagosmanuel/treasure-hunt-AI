@@ -117,8 +117,8 @@ buscar(Frontera, _, _M, Nodo):-
 buscar(Frontera, Visitados, Metas, MM):-
 	seleccionar(Nodo, Frontera, FronteraSinNodo), % selecciona primer nodo de la frontera
 	generarVecinos(Nodo, Vecinos), % genera los vecinos del nodo
-	agregarAVisitados(Nodo, Visitados, NuevosVisitados), % agrega el nodo a lista de visitados
-	agregar(FronteraSinNodo, Vecinos, NuevaFrontera, NuevosVisitados, Nodo, Metas), % agrega vecinos a la frontera
+	agregarAVisitados(Nodo, Visitados, VisitadosConNodo), % agrega el nodo a lista de visitados
+	agregar(FronteraSinNodo, Vecinos, NuevaFrontera, VisitadosConNodo, NuevosVisitados, Nodo, Metas), % agrega vecinos a la frontera
 	buscar(NuevaFrontera, NuevosVisitados, Metas, MM). % continua la busqueda con la nueva frontera
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
@@ -133,40 +133,56 @@ generarVecinos([IdNodo, _], Vecinos):-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% agregar(+Frontera, +Vecinos, -NuevaFrontera, +Visitados, +Nodo, +Metas)
+% agregar(+Frontera, +Vecinos, -NuevaFrontera, +Visitados, -NuevosVisitados, +Nodo, +Metas)
 %
 % Agrega los vecinos a la frontera.
 
-agregar(Frontera, [], Frontera, _, _, _).
-agregar(Frontera, [Vecino|Vecinos], NuevaFrontera, Visitados, Nodo, Metas):-
-    [_, CostoNodo] = Nodo,
+agregar(Frontera, [], Frontera, Visitados, Visitados, _, _).
+agregar(Frontera, [Vecino|Vecinos], NuevaFrontera, Visitados, NuevosVisitados, Nodo, Metas):-
+    [IdNodo, CostoNodo] = Nodo,
     [IdVecino, CostoVecino] = Vecino,
-    \+member([IdVecino, _], Visitados), !,
-    calcularMejorH(IdVecino, H, Metas),
-    CostoTotal is CostoNodo + CostoVecino + H,
-    agregarVecino([IdVecino, CostoTotal], Frontera, Nodo, FronteraConVecino),
-    agregar(FronteraConVecino, Vecinos, NuevaFrontera, Visitados, Nodo, Metas).
-
-agregar(Frontera, [_|Vecinos], NuevaFrontera, Visitado, Nodo, Metas):-
-    agregar(Frontera, Vecinos, NuevaFrontera, Visitado, Nodo, Metas).
+    calcularMejorH(IdNodo, HNodo, Metas),
+    calcularMejorH(IdVecino, HVecino, Metas),
+    CostoTotal is CostoNodo + CostoVecino + HVecino - HNodo,
+    agregarVecino([IdVecino, CostoTotal], Frontera, FronteraConVecino, Visitados, VisitadosAux, Nodo),
+    agregar(FronteraConVecino, Vecinos, NuevaFrontera, VisitadosAux, NuevosVisitados, Nodo, Metas).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% agregarVecino(+Vecino, +Frontera, +Nodo, -NuevaFrontera)
+% agregarVecino(+Vecino, +Frontera, -NuevaFrontera, +Visitados, -NuevosVisitados, Nodo)
 %
 % Agrega un vecino a la Frontera.
 
-agregarVecino([IdVecino, CostoVecino], Frontera, [IdNodo, _], NuevaFrontera):-
-    \+member([IdVecino, _], Frontera), !,
+% el vecino no está en la frontera y no fue visitado
+agregarVecino([IdVecino, CostoVecino], Frontera, NuevaFrontera, Visitados, Visitados, [IdNodo, _]):-
+    \+member([IdVecino, _], Frontera),
+    \+member([IdVecino, _], Visitados), !,
     retractall(padre(IdVecino, _)),
     assert(padre(IdVecino, IdNodo)),
     cola_insertar(Frontera, [IdVecino, CostoVecino], NuevaFrontera).
 
-agregarVecino([IdVecino, CostoVecino], Frontera, _, Frontera):-
+% el vecino no está en la frontera y fue visitado con un costo menor o igual
+agregarVecino([IdVecino, CostoVecino], Frontera, Frontera, Visitados, Visitados, _):-
+    \+member([IdVecino, _], Frontera),
+    member([IdVecino, CostoAnterior], Visitados),
+    CostoAnterior =< CostoVecino, !.
+
+% el vecino no está en la frontera y fue visitado con un costo mayor
+agregarVecino([IdVecino, CostoVecino], Frontera, NuevaFrontera, Visitados, NuevosVisitados, [IdNodo, _]):-
+    \+member([IdVecino, _], Frontera),
+    member([IdVecino, _], Visitados), !,
+    retractall(padre(IdVecino, _)),
+    assert(padre(IdVecino, IdNodo)),
+    cola_insertar(Frontera, [IdVecino, CostoVecino], NuevaFrontera),
+    exclude(=([IdVecino, _]), Visitados, NuevosVisitados).
+
+% el vecino está en la frontera (entonces no está en visitados) con un costo menor o igual
+agregarVecino([IdVecino, CostoVecino], Frontera, Frontera, Visitados, Visitados, _):-
     member([IdVecino, CostoAnterior], Frontera),
     CostoAnterior =< CostoVecino, !.
 
-agregarVecino([IdVecino, CostoVecino], Frontera, [IdNodo, _], NuevaFrontera):-
+% el vecino está en la frontera (entonces no está en visitados) con un costo mayor
+agregarVecino([IdVecino, CostoVecino], Frontera, NuevaFrontera, Visitados, Visitados, [IdNodo, _]):-
     retractall(padre(IdVecino, _)),
     assert(padre(IdVecino, IdNodo)),
     cola_eliminar(Frontera, IdVecino, FronteraAux),
