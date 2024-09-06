@@ -3,7 +3,8 @@
  	time/1,
  	node/5,
 	at/3,
-	direction/1
+    direction/1,
+    new_rare_item/0
 ]).
 
 :- use_module(module_path_finding, [
@@ -17,7 +18,7 @@
 	append3/4
 ]).
 
-:- dynamic plandesplazamiento/1, goalNode/1.
+:- dynamic plandesplazamiento/1, goalNode/1, tengo_pocion/0.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % run(+Perc, -Action, -Text, -Beliefs)
@@ -54,25 +55,11 @@ run(Perc, Action, Text, Beliefs):-
 	findall(at(X, Y, Z), at(X, Y, Z), Beliefs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TO-DO
 %
 % decide_action(-Action, -Text)
 %
 % Decide la acción a realizar por el agente, instanciándola en el parámetro Action.
 % Text es un texto con comillas simples como 'hola' que será mostrado en la pantalla del juego.
-%
-% En la implementación siguiente:
-% El primer caso (1), sirve de ejemplo para levantar un objeto del terreno.
-% El segundo caso (2) del predicado siempre tiene éxito, y hace que el agente se mueva de manera aleatoria.
-% El tercer caso (3) permite al agente ejecutar la siguiente acción de movimiento de un plan guardado, calculado previamente.
-% El cuarto caso (4) permite obtener un nuevo plan de movimiento usando A*.
-% El quinto caso (5) hace que el agente gire en su posición, en sentido horario.
-%
-% Deberán completar la implementación del algoritmo de búsqueda A* para que funcionen los casos (3) y (4)
-% Y eliminar el caso (2), para permitir al agente seguir el plan de movimientos.
-%
-% Pueden realizar todos los cambios de implementación que consideren necesarios.
-% Esta implementación busca ser un marco para facilitar la resolución del proyecto.
 
 % Si estoy en la misma posición que un tesoro, intento levantarlo.
 decide_action(Action, Mensaje):-
@@ -83,13 +70,15 @@ decide_action(Action, Mensaje):-
     retractall(at(MyNode, _, IdTesoro)),
 	retractall(plandesplazamiento(_)).
 
-% Si tengo un plan de movimientos, ejecuto la siguiente acción.
+% Si tengo un plan de movimientos y no hay un nuevo tesoro raro,
+% ejecuto la siguiente acción.
 decide_action(Action, 'Avanzar...'):-
 	plandesplazamiento(Plan),
-    evaluarPlan(Plan),
+    \+new_rare_item,
+    evaluar_plan(Plan),
 	length(Plan, LargoPlan),
     LargoPlan > 0, !,
-	obtenerMovimiento(Plan, Destino, Resto),
+    obtener_movimiento(Plan, Destino, Resto),
 	retractall(plandesplazamiento(_)),
 	assert(plandesplazamiento(Resto)),
 	Action = Destino.
@@ -98,13 +87,13 @@ decide_action(Action, 'Avanzar...'):-
 decide_action(Action, 'Avanzar con nuevo plan...'):-
  	busqueda_plan(Plan, _Destino, _Costo),
 	Plan \= [],
-	obtenerMovimiento(Plan, Action, Resto),
+    obtener_movimiento(Plan, Action, Resto),
 	assert(plandesplazamiento(Resto)).
 
 % Me muevo a una posición vecina seleccionada de manera aleatoria.
 decide_action(Action, 'Me muevo random para explorar el territorio...'):-
     random(Chance),
-    Chance > 0.4,
+    Chance =< 0.6,
     at(MyNode, agente, me),
     node(MyNode, _, _, _, AdyList),
     length(AdyList, LenAdyList), LenAdyList > 0,
@@ -127,41 +116,36 @@ decide_action(Action, 'Girar para conocer el territorio...'):-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% evaluarPlan(+Plan)
+% evaluar_plan(+Plan)
 %
-% Evalua si un plan sigue siendo deseable.
+% Tiene éxito si el plan termina en un tesoro.
 
-evaluarPlan(Plan):-
+evaluar_plan(Plan):-
     reverse(Plan, [avanzar(Meta)|_]),
     at(Meta, _, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% obtenerMovimiento(?Lista, ?Movimiento, ?Resto)
+% obtener_movimiento(?Lista, ?Movimiento, ?Resto)
 %
 % Obtiene el primer movimiento de una lista de movimientos.
 
-obtenerMovimiento([], [], []).
-obtenerMovimiento([X|Xs], X, Xs).
+obtener_movimiento([], [], []).
+obtener_movimiento([X|Xs], X, Xs).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % busqueda_plan(-Plan, -Destino, -Costo)
 %
 % Busca un plan de desplazamiento hacia el tesoro que se encuentre mas cerca.
+% Primero busca planes para los tesoros que son más raros de conseguir.
 
 busqueda_plan(Plan, Destino, Costo):-
  	retractall(plandesplazamiento(_)),
  	retractall(esMeta(_)),
 
-    findall(Nodo, at(Nodo, copa, _), Copas),
-    findall(Nodo, at(Nodo, cofre, _), Cofres),
-    findall(Nodo, at(Nodo, diamante, _), Diamantes),
-    findall(Nodo, at(Nodo, pocion, _), Pociones),
-    findall(Nodo, at(Nodo, reloj(_), _), Relojes),
-
-    append3(Copas, Cofres, Diamantes, Tesoros),
-    append3(Tesoros, Pociones, Relojes, Metas),
+    tipo_tesoro(TipoTesoro),
+    findall(Nodo, at(Nodo, TipoTesoro, _), Metas),
 
     buscar_plan_desplazamiento(Metas, Plan, Destino, Costo). % implementado en module_path_finding
 
@@ -173,16 +157,34 @@ busqueda_plan(Plan, Destino, Costo):-
 % devuelve el identificador y un mensaje 'Quiero levantar...'.
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar una copa...'):-
-    at(Nodo, copa, IdTesoro).
+    at(Nodo, copa, IdTesoro),
+    retractall(tengo_pocion).
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar un cofre...'):-
-    at(Nodo, cofre, IdTesoro).
+    at(Nodo, cofre, IdTesoro),
+    retractall(tengo_pocion).
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar un diamante...'):-
-    at(Nodo, diamante, IdTesoro).
+    at(Nodo, diamante, IdTesoro),
+    retractall(tengo_pocion).
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar una poción...'):-
-    at(Nodo, pocion, IdTesoro).
+    at(Nodo, pocion, IdTesoro),
+    assert(tengo_pocion).
 
 check_tesoro(Nodo, IdTesoro, 'Quiero levantar un reloj...'):-
-    at(Nodo, reloj(_), IdTesoro).
+    at(Nodo, reloj(_), IdTesoro),
+    retractall(tengo_pocion).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% tipo_tesoro(-TipoTesoro)
+%
+% Instancia TipoTesoro con un tipo de tesoro válido.
+% Si es una poción, falla si el agente ya tiene una poción.
+
+tipo_tesoro(reloj(_)).
+tipo_tesoro(diamante).
+tipo_tesoro(cofre).
+tipo_tesoro(pocion):- \+tengo_pocion.
+tipo_tesoro(copa).

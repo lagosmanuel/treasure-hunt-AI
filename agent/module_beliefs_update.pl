@@ -3,10 +3,11 @@
     time/1,
     node/5,
     at/3,
-    direction/1
+    direction/1,
+    new_rare_item/0
 ]).
 
-:- dynamic time/1, node/5, at/3, direction/1.
+:- dynamic time/1, node/5, at/3, direction/1, new_rare_item/0.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -22,12 +23,6 @@
 % A1 a Ap son p elementos (p>0) de la forma at(IdNodo, TipoEntidad, IdEntidad),
 % Time es el functor time(T), donde T es el tiempo actual (descendente) de la partida.
 % Dir es el functor direction(D), donde D ∈ {w, s, a, d}.
-%
-% Este agente básico, al recibir una nueva percepcion olvida todo lo que tenía guardado en su estado interno
-% Y almance la información de la percepción nueva.
-%
-% Pueden realizar todos los cambios de implementación que consideren necesarios.
-% Esta implementación busca ser un marco para facilitar la resolución del proyecto.
 
 update_beliefs(Perc):-
 
@@ -35,6 +30,7 @@ update_beliefs(Perc):-
     retractall(time(_)),
     retractall(direction(_)),
     retractall(at(_, agente, me)),
+    retractall(new_rare_item),
 
     % El agente actualiza los relojes
     forall(at(IdNodo, reloj(X), IdReloj),
@@ -46,10 +42,11 @@ update_beliefs(Perc):-
         check_fact(IdNodo, Perc)
     ),
 
-    % El agente recuerda los nuevos hechos
-    forall((member(Rel, Perc), \+call(Rel)),
-        assert(Rel)
-    ).
+    % El agente recuerda los nuevos hechos,
+    % y si es un tesoro raro lo registra
+    forall((member(Rel, Perc), \+call(Rel)), (
+        assert(Rel), check_rare_item(Rel)
+    )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % update_clock(+clock)
@@ -79,3 +76,17 @@ check_fact(IdNodo, Perc):-
 
 check_fact(IdNodo, _):-
     retractall(at(IdNodo, _, _)).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check_rare_item(+Rel)
+%
+% El predicado check_new_item/1 comprueba si el nuevo
+% hecho es un tesoro raro.
+
+check_rare_item(at(_, diamante, _)):-
+    assert(new_rare_item).
+
+check_rare_item(at(_, reloj(_), _)):-
+    assert(new_rare_item).
+
+check_rare_item(_).

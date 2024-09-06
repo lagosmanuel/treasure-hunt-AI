@@ -227,38 +227,14 @@ calcularMejorH(Nodo, Resultado, Metas):-
 % calcularH(+Nodo, ?Resultado, +Meta)
 %
 % Calcula el valor de la heurística para el nodo a una meta.
-% La heurística es la distancia euclidea, multiplicado por un bonus
-% por haber un tesoro en la meta.
+% La heurística es la distancia euclidea.
 
 calcularH(Nodo, Meta, Resultado):-
 	node(Meta, X2, Y2, _, _),
 	node(Nodo, X1, Y1, _, _),
-    distance([X1, Y1], [X2, Y2], Distancia),
-    bonus_tesoro(Meta, Bonus),
-    Resultado is Distancia * Bonus.
+    distance([X1, Y1], [X2, Y2], Resultado).
 
 distance([X1, Y1], [X2, Y2], Distance):-
 	DX is X2 - X1,
 	DY is Y2 - Y1,
     Distance is sqrt(DX^2 + DY^2).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% bonus_tesoro(+Nodo, -Bonus)
-%
-bonus_tesoro(Nodo, 0.9):-
-    at(Nodo, copa, _).
-
-bonus_tesoro(Nodo, 0.8):-
-    at(Nodo, cofre, _).
-
-bonus_tesoro(Nodo, 0.2):-
-    at(Nodo, anillo, _).
-
-bonus_tesoro(Nodo, 0.7):-
-    at(Nodo, pocion, _).
-
-bonus_tesoro(Nodo, 0.4):-
-    at(Nodo, reloj(_), _).
-
-bonus_tesoro(_, 1).
