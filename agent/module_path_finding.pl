@@ -84,14 +84,13 @@ buscar_plan_desplazamiento(_, [], [], 0).
 % 
 % Busca el camino optimo desde la frontera hacia la meta mas cercana, utilizando la estrategia de busqueda A*.
 
-buscarEstrella(Frontera, Metas, C3, Costo, Destino):-
+buscarEstrella(Frontera, Metas, Camino, Costo, Destino):-
 	retractall(padre(_, _)),
 	buscar(Frontera, [], Metas, Destino),
 	encontrarCamino(Destino, C),
 	append([Destino], C, C2),	
-	reverse(C2, C3),
-	costoCamino(C3, Costo),
-	eliminarPrimero(C3, Camino),
+	reverse(C2, Camino),
+	costoCamino(Camino, Costo),
 	retractall(esMeta(_)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
